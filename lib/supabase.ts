@@ -11,13 +11,6 @@ export function getSupabaseClient() {
   return createClient(supabaseUrl, supabaseAnonKey)
 }
 
-// For backward compatibility, but only create client when actually used
-export const supabase = new Proxy({} as ReturnType<typeof createClient>, {
-  get() {
-    return getSupabaseClient()
-  }
-})
-
 // Database schema for Supabase
 export const databaseSchema = `
 -- Eligibility checks table
