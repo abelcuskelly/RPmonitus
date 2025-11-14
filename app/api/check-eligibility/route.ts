@@ -2,10 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!
-)
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.SUPABASE_SERVICE_KEY
+  
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Supabase environment variables are not configured')
+  }
+  
+  return createClient(supabaseUrl, supabaseKey)
+}
 
 // Encryption for PII/PHI
 function encrypt(text: string): string {
@@ -71,6 +77,7 @@ export async function POST(req: NextRequest) {
       utm_source: req.headers.get('referer') || 'direct',
     }
     
+    const supabase = getSupabaseClient()
     const { data: insertedData, error } = await supabase
       .from('eligibility_checks')
       .insert(encryptedData)

@@ -2,12 +2,24 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!
-)
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.SUPABASE_SERVICE_KEY
+  
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Supabase environment variables are not configured')
+  }
+  
+  return createClient(supabaseUrl, supabaseKey)
+}
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+function getResendClient() {
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) {
+    return null
+  }
+  return new Resend(apiKey)
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,6 +36,7 @@ export async function POST(req: NextRequest) {
       created_at: new Date().toISOString(),
     }
     
+    const supabase = getSupabaseClient()
     const { data: enrollmentData, error } = await supabase
       .from('enrollments')
       .insert(enrollment)
@@ -33,7 +46,8 @@ export async function POST(req: NextRequest) {
     if (error) throw error
     
     // Send confirmation email
-    if (process.env.RESEND_API_KEY) {
+    const resend = getResendClient()
+    if (resend) {
       await resend.emails.send({
         from: 'RPmonitus <noreply@rpmonitus.com>',
         to: data.email,

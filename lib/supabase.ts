@@ -1,9 +1,22 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+export function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('Supabase environment variables are not configured')
+  }
+  
+  return createClient(supabaseUrl, supabaseAnonKey)
+}
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// For backward compatibility, but only create client when actually used
+export const supabase = new Proxy({} as ReturnType<typeof createClient>, {
+  get() {
+    return getSupabaseClient()
+  }
+})
 
 // Database schema for Supabase
 export const databaseSchema = `
